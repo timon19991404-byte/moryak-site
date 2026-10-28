@@ -25,6 +25,11 @@ footer{background:#031f37;color:#fff;padding:22px 0}.foot{display:flex;align-ite
 .qty-menu button.plus{background:var(--navy);color:#fff}
 .qty-menu b{font-size:17px;color:var(--navy)}
 .qty-menu button:active{transform:scale(.96)}
+.qty-menu button.remove {
+  background: #fde8e8;
+  color: #c62828;
+  font-size: 19px;
+}
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
@@ -140,10 +145,18 @@ function renderMenu(){
           ${disabled
             ? '<button class="add" disabled style="opacity:.55">Баасы такталат</button>'
             : `<div class="qty-menu">
-                <button type="button" aria-label="Азайтуу" onclick="changeQty(${x.id},-1)">−</button>
-                <b>${isWeightFish(x.id)?(qty?qty.toFixed(3):'0.000'):qty}</b>
-                <button type="button" class="plus" aria-label="Көбөйтүү" onclick="addMenuItem(${x.id})">+</button>
-              </div>`
+  <button type="button"
+    aria-label="Азайтуу"
+    onclick="changeQty(${x.id},-1)">−</button>
+  <b>${isWeightFish(x.id)?(qty?qty.toFixed(3):'0.000'):qty}</b>
+  <button type="button" class="plus"
+    aria-label="Көбөйтүү"
+    onclick="addMenuItem(${x.id})">+</button>
+  <button type="button" class="remove"
+    aria-label="Тамакты толук өчүрүү"
+    onclick="removeMenuItem(${x.id})">🗑</button>
+</div>`
+
           }
         </div>
       </div>
@@ -175,6 +188,13 @@ function changeMenuItem(id, delta){
   renderCart();
 }
 
+
+function removeMenuItem(id) {
+  delete cart[id];
+  renderMenu();
+  renderCart();
+  toast('Тамак себеттен өчүрүлдү!');
+}
 function addToCart(id){const item=MENU.find(x=>x.id===id);if(isWeightFish(id)){const raw=prompt(`«${item.name}» үчүн канча кг болжолдуу заказ бересиз?\nМисалы: 2 же 1.234 (1 кг 234 г)`,'2');if(raw===null)return;const kg=Number(String(raw).replace(',','.'));if(!Number.isFinite(kg)||kg<=0||kg>20){toast('Салмакты 0.001–20 кг аралыгында киргизиңиз.');return}cart[id]=Math.round(kg*1000)/1000}else{cart[id]=(cart[id]||0)+1}renderCart();toast('Себетке кошулду!')}
 
 function changeQty(id, delta) {
