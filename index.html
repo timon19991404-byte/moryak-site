@@ -159,8 +159,39 @@ function addMenuItem(id){
   renderMenu();
   renderCart();
 }
+function changeMenuItem(id, delta){
+  if(isWeightFish(id)){
+    changeQty(id, delta);
+    return;
+  }
+
+  cart[id] = (cart[id] || 0) + delta;
+
+  if(cart[id] <= 0){
+    delete cart[id];
+  }
+
+  renderMenu();
+  renderCart();
+}
+
 function addToCart(id){const item=MENU.find(x=>x.id===id);if(isWeightFish(id)){const raw=prompt(`«${item.name}» үчүн канча кг болжолдуу заказ бересиз?\nМисалы: 2 же 1.234 (1 кг 234 г)`,'2');if(raw===null)return;const kg=Number(String(raw).replace(',','.'));if(!Number.isFinite(kg)||kg<=0||kg>20){toast('Салмакты 0.001–20 кг аралыгында киргизиңиз.');return}cart[id]=Math.round(kg*1000)/1000}else{cart[id]=(cart[id]||0)+1}renderCart();toast('Себетке кошулду!')}
-function changeQty(id,delta){const step=isWeightFish(id)?0.001:1;cart[id]=Math.round(((cart[id]||0)+delta*step)*1000)/1000;if(cart[id]<=0)delete cart[id];renderCart()}
+
+function changeQty(id, delta) {
+  const step = isWeightFish(id) ? 0.001 : 1;
+
+  cart[id] = Math.round(
+    ((cart[id] || 0) + delta * step) * 1000
+  ) / 1000;
+
+  if (cart[id] <= 0) {
+    delete cart[id];
+  }
+
+  renderMenu();
+  renderCart();
+}
+
 function renderCart(){const entries=MENU.filter(x=>cart[x.id]);const count=entries.reduce((s,x)=>s+(isWeightFish(x.id)?1:cart[x.id]),0);const total=entries.reduce((s,x)=>s+x.price*cart[x.id],0);countEl.textContent=Math.round(count*10)/10;document.getElementById('float-count').textContent=Math.round(count*10)/10;document.getElementById('float-total').textContent=money(total);totalEl.textContent=money(total);if(!entries.length){cartList.innerHTML='<div class="cart-empty">Себетиңиз бош. Менюдан тамак тандаңыз.</div>';return}cartList.innerHTML=entries.map(x=>`<div class="cart-item"><div><strong>${x.name}</strong><small>${isWeightFish(x.id)?`${cart[x.id].toFixed(3)} кг болжолдуу × ${money(x.price)} / кг = ${money(x.price*cart[x.id])}`:`${money(x.price)} × ${cart[x.id]} = ${money(x.price*cart[x.id])}`}</small></div><div class="qty"><button type="button" aria-label="Азайтуу" onclick="changeQty(${x.id},-1)">−</button><b>${isWeightFish(x.id)?cart[x.id].toFixed(3)+' кг':cart[x.id]}</b><button type="button" aria-label="Көбөйтүү" onclick="changeQty(${x.id},1)">+</button></div></div>`).join('')}
 document.querySelectorAll('.cat').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.cat').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeCategory=btn.dataset.cat;renderMenu();document.getElementById('menu').scrollIntoView({behavior:'smooth',block:'start'})}));
 document.getElementById('order-form').addEventListener('submit',e=>{e.preventDefault();const entries=MENU.filter(x=>cart[x.id]);if(!entries.length){toast('Адегенде менюдан тамак тандаңыз.');document.getElementById('menu').scrollIntoView({behavior:'smooth'});return}const f=new FormData(e.target),total=entries.reduce((s,x)=>s+x.price*cart[x.id],0);const lines=entries.map(x=>isWeightFish(x.id)?`• ${x.name} — ${cart[x.id].toFixed(3)} кг болжолдуу × ${x.price} сом/кг = ${(x.price*cart[x.id]).toLocaleString('ru-RU',{maximumFractionDigits:2})} сом (так салмакты кафе ырастайт)`:`• ${x.name} — ${cart[x.id]} даана × ${x.price} сом = ${x.price*cart[x.id]} сом`);const msg=['Саламатсызбы! «МОРЯК» кафесине заказ бергим келет.','', 'Заказ:',...lines,'',`Алдын ала сумма: ${total.toLocaleString('ru-RU',{maximumFractionDigits:2})} сом`,'ЭСКЕРТҮҮ: Форельдин акыркы салмагы таразада аныкталат. Так салмак жана акыркы баа WhatsApp аркылуу макулдашылат. Мен ырастагандан кийин заказды даярдаңыз.',`Аты: ${f.get('customer')}`,`Телефон: ${f.get('phone')}`,`Алуу жолу: ${f.get('method')}`,`Дарек: ${f.get('address')||'Көрсөтүлгөн жок'}`,`Кошумча каалоо: ${f.get('notes')||'Жок'}`].join('\n');window.open('https://wa.me/996506991404?text='+encodeURIComponent(msg),'_blank','noopener')});
