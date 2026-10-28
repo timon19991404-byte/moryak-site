@@ -20,6 +20,11 @@ footer{background:#031f37;color:#fff;padding:22px 0}.foot{display:flex;align-ite
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#102f48;color:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 10px 30px #0003;z-index:50;display:none;max-width:90%;text-align:center;font-size:13px}.floating-cart{position:fixed;bottom:0;left:0;right:0;z-index:35;background:#fff;border-top:1px solid #dfe6eb;box-shadow:0 -5px 20px #001b3010;padding:9px 3%;display:flex;align-items:center;justify-content:center}.floating-cart a{width:min(1050px,100%);display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--navy);color:#fff;text-decoration:none;border-radius:13px;padding:12px 16px;font-weight:850}.floating-cart .sum{color:var(--gold);white-space:nowrap}
 @media(max-width:760px){.about-photo{height:210px;border-radius:18px}.wrap{width:94%}.top{min-height:62px}.brand{font-size:20px}.brandmark{width:37px;height:37px;font-size:21px}.brand small{font-size:8px;letter-spacing:3px}.phone,header nav{display:none}.head-actions .btn{padding:10px 12px;font-size:12px}.hero{padding:23px 0 21px}.hero h1{font-size:34px}.hero p{font-size:14px;line-height:1.45}.hero-buttons .btn{padding:10px 13px;font-size:12px}.menu-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.food-body{padding:10px}.food-title-row h3{font-size:13px}.price{font-size:13px}.desc{font-size:11px;line-height:1.35}.add{font-size:11px;padding:8px 5px}.weight{font-size:10px}.section-head h2{font-size:22px}.section-head>.btn{font-size:11px;padding:9px 10px}.categories{top:62px;gap:6px}.cat{font-size:12px;padding:8px 12px}.menu-note{font-size:10px}.order-grid{grid-template-columns:1fr}.field-grid{grid-template-columns:1fr;gap:0}.form-card,.order-info{padding:15px}.form-actions{flex-direction:column}.foot{align-items:flex-start}.about-list span{font-size:11px}}
 @media(min-width:761px){.floating-cart{padding:10px 4%}}
+.qty-menu{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f0f5f9;border-radius:12px;padding:6px;margin-top:auto}
+.qty-menu button{width:42px;height:38px;border:0;border-radius:9px;background:#dce8f1;color:var(--navy);font-size:23px;font-weight:900}
+.qty-menu button.plus{background:var(--navy);color:#fff}
+.qty-menu b{font-size:17px;color:var(--navy)}
+.qty-menu button:active{transform:scale(.96)}
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
@@ -118,7 +123,42 @@ const cart={};const grid=document.getElementById('menu-grid'),cartList=document.
 function money(n){return Number(n).toLocaleString('ru-RU',{maximumFractionDigits:2})+' сом'}
 function toast(msg){toastEl.textContent=msg;toastEl.style.display='block';setTimeout(()=>toastEl.style.display='none',2200)}
 function isWeightFish(id){return id===1||id===2}
-function renderMenu(){const items=MENU.filter(x=>activeCategory==='Баары'||x.cat===activeCategory);grid.innerHTML=items.map(x=>`<article class="food-card"><div class="food-body"><div class="food-title-row"><h3>${x.name}</h3><span class="price">${(x.id===33||x.id===34)?'Баасы такталат':money(x.price)}</span></div><p class="desc">${x.desc}</p><div class="add-row"><span class="weight">${x.weight}</span>${(x.id===33||x.id===34)?'<button class="add" disabled style="opacity:.55">Баасы такталат</button>':`<button class="add" onclick="addToCart(${x.id})">＋ Себетке</button>`}</div></div></article>`).join('')}
+function renderMenu(){
+  const items=MENU.filter(x=>activeCategory==='Баары'||x.cat===activeCategory);
+  grid.innerHTML=items.map(x=>{
+    const disabled=x.id===33||x.id===34;
+    const qty=cart[x.id]||0;
+    return `<article class="food-card">
+      <div class="food-body">
+        <div class="food-title-row">
+          <h3>${x.name}</h3>
+          <span class="price">${disabled?'Баасы такталат':money(x.price)}</span>
+        </div>
+        <p class="desc">${x.desc}</p>
+        <div class="add-row">
+          <span class="weight">${x.weight}</span>
+          ${disabled
+            ? '<button class="add" disabled style="opacity:.55">Баасы такталат</button>'
+            : `<div class="qty-menu">
+                <button type="button" aria-label="Азайтуу" onclick="changeQty(${x.id},-1)">−</button>
+                <b>${isWeightFish(x.id)?(qty?qty.toFixed(3):'0.000'):qty}</b>
+                <button type="button" class="plus" aria-label="Көбөйтүү" onclick="addMenuItem(${x.id})">+</button>
+              </div>`
+          }
+        </div>
+      </div>
+    </article>`;
+  }).join('');
+}
+function addMenuItem(id){
+  if(isWeightFish(id)){
+    addToCart(id);
+    return;
+  }
+  cart[id]=(cart[id]||0)+1;
+  renderMenu();
+  renderCart();
+}
 function addToCart(id){const item=MENU.find(x=>x.id===id);if(isWeightFish(id)){const raw=prompt(`«${item.name}» үчүн канча кг болжолдуу заказ бересиз?\nМисалы: 2 же 1.234 (1 кг 234 г)`,'2');if(raw===null)return;const kg=Number(String(raw).replace(',','.'));if(!Number.isFinite(kg)||kg<=0||kg>20){toast('Салмакты 0.001–20 кг аралыгында киргизиңиз.');return}cart[id]=Math.round(kg*1000)/1000}else{cart[id]=(cart[id]||0)+1}renderCart();toast('Себетке кошулду!')}
 function changeQty(id,delta){const step=isWeightFish(id)?0.001:1;cart[id]=Math.round(((cart[id]||0)+delta*step)*1000)/1000;if(cart[id]<=0)delete cart[id];renderCart()}
 function renderCart(){const entries=MENU.filter(x=>cart[x.id]);const count=entries.reduce((s,x)=>s+(isWeightFish(x.id)?1:cart[x.id]),0);const total=entries.reduce((s,x)=>s+x.price*cart[x.id],0);countEl.textContent=Math.round(count*10)/10;document.getElementById('float-count').textContent=Math.round(count*10)/10;document.getElementById('float-total').textContent=money(total);totalEl.textContent=money(total);if(!entries.length){cartList.innerHTML='<div class="cart-empty">Себетиңиз бош. Менюдан тамак тандаңыз.</div>';return}cartList.innerHTML=entries.map(x=>`<div class="cart-item"><div><strong>${x.name}</strong><small>${isWeightFish(x.id)?`${cart[x.id].toFixed(3)} кг болжолдуу × ${money(x.price)} / кг = ${money(x.price*cart[x.id])}`:`${money(x.price)} × ${cart[x.id]} = ${money(x.price*cart[x.id])}`}</small></div><div class="qty"><button type="button" aria-label="Азайтуу" onclick="changeQty(${x.id},-1)">−</button><b>${isWeightFish(x.id)?cart[x.id].toFixed(3)+' кг':cart[x.id]}</b><button type="button" aria-label="Көбөйтүү" onclick="changeQty(${x.id},1)">+</button></div></div>`).join('')}
