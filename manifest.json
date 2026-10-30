@@ -1,0 +1,26 @@
+{
+  "name": "МОРЯК КАФЕСИ",
+  "short_name": "МОРЯК",
+  "description": "МОРЯК кафесинин онлайн менюсу жана заказ тиркемеси",
+  "lang": "ky",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#062b4b",
+  "theme_color": "#062b4b",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
