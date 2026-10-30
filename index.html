@@ -195,7 +195,15 @@ async function loadPublicMenu() {
     toast("Меню жүктөлгөн жок. Интернетти текшер.");
   }
 }
-const grid=document.getElementById('menu-grid'),cartList=document.getElementById('cart-list'),totalEl=document.getElementById('total'),countEl=document.getElementById('cart-count'),toastEl=document.getElementById('toast');let activeCategory='Баары';
+const CART_KEY = 'moryak_cart_v1';
+let cart = {};
+
+try {
+  cart = JSON.parse(localStorage.getItem(CART_KEY)) || {};
+} catch (e) {
+  cart = {};
+}
+  const grid=document.getElementById('menu-grid'),cartList=document.getElementById('cart-list'),totalEl=document.getElementById('total'),countEl=document.getElementById('cart-count'),toastEl=document.getElementById('toast');let activeCategory='Баары';
 function saveCart() {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
 }function money(n){return Number(n).toLocaleString('ru-RU',{maximumFractionDigits:2})+' сом'}
