@@ -37,6 +37,7 @@ footer{background:#031f37;color:#fff;padding:22px 0}.foot{display:flex;align-ite
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="МОРЯК">
 <script>if('serviceWorker'in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));}</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header><div class="wrap top">
@@ -123,13 +124,79 @@ const MENU = [
 {id:31,name:"Газдалган суусундук",cat:"Суусундук",price:110,weight:"1 бөтөлкө",desc:"Муздак газдалган суусундук.",tag:""},
 {id:32,name:"Шире",cat:"Суусундук",price:100,weight:"1 порция",desc:"Мөмө ширеси.",tag:""}
 ];
-try{const saved=localStorage.getItem('moryak_menu_v1');if(saved){const parsed=JSON.parse(saved);if(Array.isArray(parsed)&&parsed.length)MENU.splice(0,MENU.length,...parsed)}}catch(e){}
-const CART_KEY = 'moryak_cart_v1';
+const SUPABASE_URL = "https://vtrbbvmsgjoadopretly.supabase.co";
+const SUPABASE_KEY = "sb_publishable_SLIuzn4o6df-Roh5KsR2WQ_kikG4h1f";
 
-let cart = {};
-try {
-  cart = JSON.parse(localStorage.getItem(CART_KEY)) || {};
-} catch (e) {
+function normalizeCategory(category) {
+  const c = String(category || "").trim().toLowerCase();
+
+  const categories = {
+    "сеттер": "Сет",
+    "сет": "Сет",
+    "форель": "Форель",
+    "суши": "Суши",
+    "шаурма": "Шаурма",
+    "бургер": "Бургер",
+    "пицца": "Пицца",
+    "шорпо": "Шорпо",
+    "гарнир": "Гарнир",
+    "салат": "Салат",
+    "суусундук": "Суусундук",
+    "суусундуктар": "Суусундук"
+  };
+
+  return categories[c] || category;
+}
+
+async function loadPublicMenu() {
+  try {
+    const supabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const { data, error } = await supabase
+      .from("menu_items")
+      .select("id,name,category,price,description,image_url,is_available")
+      .eq("is_available", true);
+
+    if (error) throw error;
+
+    if (Array.isArray(data)) {
+      const updated = [...MENU];
+
+      data.forEach(item => {
+        const newItem = {
+          id: "db-" + item.id,
+          name: item.name,
+          cat: normalizeCategory(item.category),
+          price: Number(item.price),
+          weight: "",
+          desc: item.description || "",
+          tag: "",
+          image_url: item.image_url || ""
+        };
+
+        const index = updated.findIndex(
+          x => x.name.trim().toLowerCase() ===
+               item.name.trim().toLowerCase()
+        );
+
+        if (index >= 0) updated[index] = newItem;
+        else updated.push(newItem);
+      });
+
+      MENU.splice(0, MENU.length, ...updated);
+    }
+
+    renderMenu();
+    renderCart();
+
+  } catch (error) {
+    console.error("Supabase меню катасы:", error);
+    toast("Меню жүктөлгөн жок. Интернетти текшер.");
+  }
+}
   cart = {};
 }const grid=document.getElementById('menu-grid'),cartList=document.getElementById('cart-list'),totalEl=document.getElementById('total'),countEl=document.getElementById('cart-count'),toastEl=document.getElementById('toast');let activeCategory='Баары';
 function saveCart() {
@@ -224,7 +291,11 @@ function changeQty(id, delta) {
 function renderCart(){saveCart();const entries=MENU.filter(x=>cart[x.id]);const count=entries.reduce((s,x)=>s+(isWeightFish(x.id)?1:cart[x.id]),0);const total=entries.reduce((s,x)=>s+x.price*cart[x.id],0);countEl.textContent=Math.round(count*10)/10;document.getElementById('float-count').textContent=Math.round(count*10)/10;document.getElementById('float-total').textContent=money(total);totalEl.textContent=money(total);if(!entries.length){cartList.innerHTML='<div class="cart-empty">Себетиңиз бош. Менюдан тамак тандаңыз.</div>';return}cartList.innerHTML=entries.map(x=>`<div class="cart-item"><div><strong>${x.name}</strong><small>${isWeightFish(x.id)?`${cart[x.id].toFixed(3)} кг болжолдуу × ${money(x.price)} / кг = ${money(x.price*cart[x.id])}`:`${money(x.price)} × ${cart[x.id]} = ${money(x.price*cart[x.id])}`}</small></div><div class="qty"><button type="button" aria-label="Азайтуу" onclick="changeQty(${x.id},-1)">−</button><b>${isWeightFish(x.id)?cart[x.id].toFixed(3)+' кг':cart[x.id]}</b><button type="button" aria-label="Көбөйтүү" onclick="changeQty(${x.id},1)">+</button></div></div>`).join('')}
 document.querySelectorAll('.cat').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.cat').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeCategory=btn.dataset.cat;renderMenu();document.getElementById('menu').scrollIntoView({behavior:'smooth',block:'start'})}));
 document.getElementById('order-form').addEventListener('submit',e=>{e.preventDefault();const entries=MENU.filter(x=>cart[x.id]);if(!entries.length){toast('Адегенде менюдан тамак тандаңыз.');document.getElementById('menu').scrollIntoView({behavior:'smooth'});return}const f=new FormData(e.target),total=entries.reduce((s,x)=>s+x.price*cart[x.id],0);const lines=entries.map(x=>isWeightFish(x.id)?`• ${x.name} — ${cart[x.id].toFixed(3)} кг болжолдуу × ${x.price} сом/кг = ${(x.price*cart[x.id]).toLocaleString('ru-RU',{maximumFractionDigits:2})} сом (так салмакты кафе ырастайт)`:`• ${x.name} — ${cart[x.id]} даана × ${x.price} сом = ${x.price*cart[x.id]} сом`);const msg=['Саламатсызбы! «МОРЯК» кафесине заказ бергим келет.','', 'Заказ:',...lines,'',`Алдын ала сумма: ${total.toLocaleString('ru-RU',{maximumFractionDigits:2})} сом`,'ЭСКЕРТҮҮ: Форельдин акыркы салмагы таразада аныкталат. Так салмак жана акыркы баа WhatsApp аркылуу макулдашылат. Мен ырастагандан кийин заказды даярдаңыз.',`Аты: ${f.get('customer')}`,`Телефон: ${f.get('phone')}`,`Алуу жолу: ${f.get('method')}`,`Дарек: ${f.get('address')||'Көрсөтүлгөн жок'}`,`Кошумча каалоо: ${f.get('notes')||'Жок'}`].join('\n');window.open('https://wa.me/996506991404?text='+encodeURIComponent(msg),'_blank','noopener')});
-document.getElementById('year').textContent=new Date().getFullYear();renderMenu();renderCart();
+document.getElementById('year').textContent = new Date().getFullYear();
+
+renderMenu();
+renderCart();
+loadPublicMenu();
 </script>
 </body>
 </html>
