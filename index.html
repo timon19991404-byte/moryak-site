@@ -188,17 +188,14 @@ async function loadPublicMenu() {
 
       MENU.splice(0, MENU.length, ...updated);
     }
-
     renderMenu();
     renderCart();
-
-  } catch (error) {
+} catch (error) {
     console.error("Supabase меню катасы:", error);
     toast("Меню жүктөлгөн жок. Интернетти текшер.");
   }
 }
-  cart = {};
-}const grid=document.getElementById('menu-grid'),cartList=document.getElementById('cart-list'),totalEl=document.getElementById('total'),countEl=document.getElementById('cart-count'),toastEl=document.getElementById('toast');let activeCategory='Баары';
+const grid=document.getElementById('menu-grid'),cartList=document.getElementById('cart-list'),totalEl=document.getElementById('total'),countEl=document.getElementById('cart-count'),toastEl=document.getElementById('toast');let activeCategory='Баары';
 function saveCart() {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
 }function money(n){return Number(n).toLocaleString('ru-RU',{maximumFractionDigits:2})+' сом'}
